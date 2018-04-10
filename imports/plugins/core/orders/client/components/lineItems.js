@@ -59,13 +59,13 @@ class LineItems extends Component {
   displayMedia(uniqueItem) {
     const { displayMedia } = this.props;
 
-    if (displayMedia(uniqueItem)) {
-      return (
-        <img src={displayMedia(uniqueItem).url()}/>
-      );
-    }
     return (
-      <img src= "/resources/placeholder.gif" />
+      <Components.ProductImage
+        item={uniqueItem}
+        displayMedia={displayMedia}
+        size="thumbnail"
+        badge={false}
+      />
     );
   }
 
@@ -327,18 +327,26 @@ class LineItems extends Component {
   render() {
     const { uniqueItems } = this.props;
     return (
-      <div className="invoice invoice-line-items" onClick={this.props.handlePopOverOpen}>
-        {uniqueItems.map((uniqueItem) => {
-          return (
-            <div key={uniqueItem._id}> {this.renderLineItem(uniqueItem)} </div>
-          );
-        })}
+      <Components.Button
+        tagName="div"
+        className={{
+          "btn": false,
+          "btn-default": false,
+          "flat": false,
+          "invoice": true,
+          "invoice-line-items": true
+        }}
+        onClick={this.props.handlePopOverOpen}
+      >
+        {uniqueItems.map((uniqueItem) => (
+          <div key={uniqueItem._id}> {this.renderLineItem(uniqueItem)} </div>
+        ))}
 
         {
           Roles.userIsInRole(Meteor.userId(), ["orders", "dashboard/orders"], Reaction.getShopId()) &&
           this.renderPopOver()
         }
-      </div>
+      </Components.Button>
     );
   }
 }

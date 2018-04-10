@@ -34,20 +34,17 @@ export const methods = {
     let providerId;
     if (rate._id) {
       providerId = rate._id;
+    } else if (!Shipping.find({}).count()) { // There is no default provider, so add it
+      const defaultProvider = Shipping.insert({
+        name: "Default Shipping Provider",
+        provider: {
+          name: "flatRates",
+          label: "Flat Rate"
+        }
+      });
+      providerId = defaultProvider;
     } else {
-      // There is no default provider, so add it
-      if (!Shipping.find({}).count()) {
-        const defaultProvider = Shipping.insert({
-          name: "Default Shipping Provider",
-          provider: {
-            name: "flatRates",
-            label: "Flat Rate"
-          }
-        });
-        providerId = defaultProvider;
-      } else {
-        throw new Meteor.Error("bad-provider-id", "No Provider ID provided when adding methods");
-      }
+      throw new Meteor.Error("bad-provider-id", "No Provider ID provided when adding methods");
     }
 
     rate._id = Random.id();
@@ -67,7 +64,7 @@ export const methods = {
    * @return { Number } update result
    */
   "shipping/rates/update"(method) {
-    check(method, ShippingMethod);
+    ShippingMethod.validate(method);
     if (!Reaction.hasPermission(shippingRoles)) {
       throw new Meteor.Error("access-denied", "Access Denied");
     }
@@ -95,13 +92,22 @@ export const methods = {
       throw new Meteor.Error("access-denied", "Access Denied");
     }
 
-    return Shipping.update({
+    const rates = Shipping.findOne({ "methods._id": rateId });
+    const { methods: shippingMethods } = rates;
+    const updatedMethods = shippingMethods.filter((method) => method._id !== rateId);
+
+    // HACK: not sure why we need to do this.. but it works.
+    // Replaced a $pull which in theory is better, but was broken.
+    // Issue w/ pull was introduced during the simpl-schema update
+    const deleted = Shipping.update({
       "methods._id": rateId
     }, {
-      $pull: {
-        methods: { _id: rateId }
+      $set: {
+        methods: updatedMethods
       }
     });
+
+    return deleted;
   }
 };
 

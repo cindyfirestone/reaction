@@ -41,18 +41,20 @@ describe("cart methods", function () {
       const cartUserId = cart.userId;
       sandbox.stub(Reaction, "getShopId", () => shop._id);
       sandbox.stub(Meteor, "userId", () => cartUserId);
-      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function (...args) {
+        check(args, [Match.Any]);
       });
-      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function (...args) {
+        check(args, [Match.Any]);
       });
       const updateSpy = sandbox.spy(Collections.Cart, "update");
       const cartFromCollection = Collections.Cart.findOne(cart._id);
       const cartItemId = cartFromCollection.items[0]._id;
       assert.equal(cartFromCollection.items.length, 2);
       Meteor.call("cart/removeFromCart", cartItemId);
-      assert.equal(updateSpy.callCount, 1, "update should be called one time");
+      // The cart/removeFromCart method will trigger the hook
+      // afterCartUpdateCalculateDiscount 4 times.
+      assert.equal(updateSpy.callCount, 4, "update should be called four times");
       Meteor._sleepForMs(1000);
       const updatedCart = Collections.Cart.findOne(cart._id);
       assert.equal(updatedCart.items.length, 1, "there should be one item left in cart");
@@ -60,11 +62,11 @@ describe("cart methods", function () {
     });
 
     it("should decrease the quantity when called with a quantity", function () {
-      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function (...args) {
+        check(args, [Match.Any]);
       });
-      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function (...args) {
+        check(args, [Match.Any]);
       });
       const cart = Factory.create("cartTwo");
       const cartUserId = cart.userId;
@@ -79,11 +81,11 @@ describe("cart methods", function () {
     });
 
     it("should remove cart item when quantity is decresed to zero", function () {
-      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "cart/resetShipmentMethod", function (...args) {
+        check(args, [Match.Any]);
       });
-      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function () {
-        check(arguments, [Match.Any]);
+      sandbox.stub(Meteor.server.method_handlers, "shipping/updateShipmentQuotes", function (...args) {
+        check(args, [Match.Any]);
       });
       const cart = Factory.create("cartOne");
       const cartUserId = cart.userId;
